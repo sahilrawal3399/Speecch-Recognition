@@ -1,0 +1,139 @@
+<!doctype html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="./css/style.css">
+    <title>JavaScript Speech to Text</title>
+</head>
+
+<body>
+    <div id="survey-step-1"></div>
+
+    <div id="welcome-survey">
+        <div>
+            <span id="que_data"></span>
+        </div>
+        <div>
+            <span id="ans_data"></span>
+        </div>
+        
+        <button id='play'>Start QA</button>
+    </div>
+    <audio src="beeep.mp3" id="player">
+        <p>If you are reading this, it is because your browser does not support the audio element. </p>
+    </audio>
+    
+    <script>
+
+        let DB = {
+            que : [],
+            ans : []
+        }
+        DB.que.push('What is your name?');
+        DB.que.push('What is your Age?');
+        DB.que.push('What is your Birth Place?');
+        DB.que.push('Do you experience any of the symptoms like fever,cough?');
+
+
+        console.log("DB >>",DB.que);
+
+        let conFirmMsg = "For confirmation say YES or NO to speech again"
+
+        let index = 0;
+        let confirmAction = false;
+        let ansDataval = "";
+
+
+        
+   
+        $(document).ready(function () {
+            var audio = document.getElementById("player");
+
+            $('#play').click(function (){
+                startQue(index,confirmAction);
+            });
+            
+            let count = 0;
+            function startQue(indexVal,confVal) {
+                console.log('indexVal >>>>', indexVal);
+                console.log("Count: ",count);
+                if(indexVal < DB.que.length){
+                    document.getElementById("que_data").innerHTML = DB.que[indexVal];
+                    let data = DB.que[indexVal] + " Please Speak after the beep sound";
+                    if(confVal == true){
+                        data = conFirmMsg;
+                    }
+                    console.log("Data: ",data);
+                    let speech = new SpeechSynthesisUtterance();
+                    speech.lang = "en-US";
+                    speech.text = data;
+                    speech.volume = 10;
+                    speech.rate = 1;
+                    speech.pitch = 1;
+                    window.speechSynthesis.speak(speech);
+                    speech.onend = function () {
+                        count = count + 1;
+                        console.log('Count St - Onend: ',count);
+                        runSpeechRec(indexVal,confVal);
+                    }
+                }
+                else{
+                    document.getElementById("que_data").innerHTML = "<b>Thank You.</b>"
+                    document.getElementById("ans_data").innerHTML = ""
+                }
+            }
+            
+            function runSpeechRec(indexVal,confVal) {
+                console.log("SpeechInd >>>>",indexVal);
+                console.log("confVal >>>>",confVal);
+                audio.play();
+                count = count + 1;
+                console.log('Count - Audio: ',count);
+                var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+                var recognition = new SpeechRecognition();
+ 
+                recognition.onresult = function (event) {
+                    let ansData = event.results[0][0].transcript;
+                    let confidence = event.results[0][0].confidence;
+                    console.log("Ans >>>>>",ansData);
+                    
+                    // [ Yes ]
+                    if(ansData == 'yes' || ansData == 'y'){
+                        DB.ans.push(ansDataval);
+                        console.log('ansDataval>>>'+ansDataval);
+                        indexVal = indexVal+1;
+                        console.log("DB >>",DB.ans);
+                        document.getElementById("ans_data").innerHTML = "<b>Ans :</b> ";
+                        count = count + 1;
+                        console.log('Count - Yes: ',count);
+                        startQue(indexVal,false);
+                    }
+                    // [ No ]
+                    else if(ansData == 'no' || ansData == 'n') {
+                        console.error("No");
+                        ansDataval = ansData;
+                        document.getElementById("ans_data").innerHTML = "<b>Ans :</b> " + ansData;
+                        count = count + 1;
+                        console.log('Count - No: ',count);
+                        startQue(indexVal,false);
+                    }
+                    else {
+                        console.error("Else");
+                        ansDataval = ansData;
+                        document.getElementById("ans_data").innerHTML = "<b>Ans :</b> " + ansData;
+                        count = count + 1;
+                        console.log('Count - No: ',count);
+                        // startQue(indexVal,false);
+                    }
+                    if(confVal == true){
+
+                    }else{
+                        console.error('-E-L-S-E-');
+                        startQue(indexVal,true);
+                    }
+                };
+                recognition.start();
+            }
+        });
+    </script>
+</body>
+</html>
